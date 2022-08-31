@@ -1,2 +1,2 @@
 #!/bin/bash
-chmod +x pwd 0-current_working_directory
+pwd
