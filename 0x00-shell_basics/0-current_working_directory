@@ -1,2 +1,2 @@
 #!/bin/bash
-pwd chmod +x pwd.sh
+chmod +x pwd
