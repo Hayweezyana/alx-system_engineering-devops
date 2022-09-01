@@ -1,0 +1,2 @@
+#!/bin/bash
+chown victor:my_dir *
