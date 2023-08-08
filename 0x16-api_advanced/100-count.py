@@ -1,28 +1,61 @@
-import requests
+#!/usr/bin/python3
+""" Count it! """
+from requests import get
 
-def count_words(subreddit, word_list, after=None, word_count={}):
-    """Query the Reddit API, parse titles of hot articles, and count given keywords."""
-    url = f"https://www.reddit.com/r/{subreddit}/hot.json"
-    headers = {
-        "User-Agent": "esw1229/0.0.1 (by /u/hayweezybaby)"
+REDDIT = "https://www.reddit.com/"
+HEADERS = {'user-agent': 'esw1229/0.0.1'}
+
+
+def count_words(subreddit, word_list, after="", word_dic={}):
+    """
+    Returns a list containing the titles of all hot articles for a
+    given subreddit. If no results are found for the given subreddit,
+    the function should return None.
+    """
+    if not word_dic:
+        for word in word_list:
+            word_dic[word] = 0
+
+    if after is None:
+        word_list = [[key, value] for key, value in word_dic.items()]
+        word_list = sorted(word_list, key=lambda x: (-x[1], x[0]))
+        for w in word_list:
+            if w[1]:
+                print("{}: {}".format(w[0].lower(), w[1]))
+        return None
+
+    url = REDDIT + "r/{}/hot/.json".format(subreddit)
+
+    params = {
+        'limit': 100,
+        'after': after
     }
-    params = {"limit": 100, "after": after}
-    response = requests.get(url, headers=headers, params=params, allow_redirects=False)
-    
-    if response.status_code == 200:
-        data = response.json().get("data", {})
-        children = data.get("children", [])
-        
-        for child in children:
-            title = child["data"]["title"].lower()
-            for word in word_list:
-                if title.count(f" {word.lower()} ") > 0:  # Check for exact word match with spaces
-                    word_count[word.lower()] = word_count.get(word.lower(), 0) + title.count(f" {word.lower()} ")
-        
+
+    r = get(url, headers=HEADERS, params=params, allow_redirects=False)
+
+    if r.status_code != 200:
+        return None
+
+    try:
+        js = r.json()
+
+    except ValueError:
+        return None
+
+    try:
+
+        data = js.get("data")
         after = data.get("after")
-        if after:
-            count_words(subreddit, word_list, after, word_count)
-        else:
-            sorted_counts = sorted(word_count.items(), key=lambda x: (-x[1], x[0]))
-            for word, count in sorted_counts:
-                print(f"{word}: {count}")
+        children = data.get("children")
+        for child in children:
+            post = child.get("data")
+            title = post.get("title")
+            lower = [s.lower() for s in title.split(' ')]
+
+            for w in word_list:
+                word_dic[w] += lower.count(w.lower())
+
+    except:
+        return None
+
+    count_words(subreddit, word_list, after, word_dic)
